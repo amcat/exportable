@@ -1,2 +1,2 @@
 from .table import Table
-from .declared_table import DeclaredTable
+from amcatable.table import DeclaredTable

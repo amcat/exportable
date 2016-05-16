@@ -1,4 +1,6 @@
 import copy
+import datetime
+import functools
 import itertools
 
 from typing import Iterable, Any, Sequence, Union
@@ -33,7 +35,7 @@ class Table:
 
         for i, column in enumerate(self._columns):
             if column.label is None:
-                error = "Each column MUST have a label upon amcatable instantiation. {} ({}) has none."
+                error = "Each column MUST have a label upon table instantiation. {} ({}) has none."
                 raise ValueError(error.format(column, i))
 
         # Set index on each column object. Notice that we skip None columns on purpose, but
@@ -113,20 +115,89 @@ class DictTable(Table):
         return func(value) if func else value
 
 
+class AttributeTable(Table):
+    def __init__(self, rows: Iterable[dict], columns, lazy=True, size_hint=None):
+        """
+        @param rows: list of rows
+        @param columns: list of columns. The label of a column is used to access dictionary.
+        @param lazy: if True, no random access is allowed
+        @param size_hint: (approximate) length of rows. Is used by exporters to determine progress.
+        """
+        super().__init__(rows, columns, lazy=lazy, size_hint=size_hint)
+
+    def get_value(self, row, column: Column):
+        value = getattr(row, column.label)
+        func = column.cellfunc
+        return func(value) if func else value
+
+
 class WrappedTable:
+    """
+    Wrapped tables wrap, like the name implies, table objects. Although they do not inherit from
+    Table, the support the same methods through attribute proxying. Wrapped tables offer
+    additional functionality to tables, while not concerning themselves with the underlying data
+    structure.
+    """
     def __init__(self, table):
         self.table = table
+
+        # Copy hot function to prevent loads of redirects
+        self.get_value = table.get_value
 
     def __getattr__(self, name):
         return getattr(self.table, name)
 
 
 class SortedTable(WrappedTable):
+    """A sorted table sorts its rows according to a user defined function."""
     def __init__(self, table, key, reverse=False):
+        """
+        @param table: table to wrap
+        @param key: lambda function passed to sorted(). Is given a row.
+        @param reverse: reverse sorting.
+        """
         super(SortedTable, self).__init__(table)
         self.key = key
         self.reverse = reverse
         self.table.to_strict()
 
+    @property
+    @functools.lru_cache()
     def rows(self):
         return sorted(self.table.rows, key=self.key, reverse=self.reverse)
+
+
+def get_declared_columns(cls):
+    for attr_name in dir(cls):
+        if not attr_name.startswith("_"):
+            column = getattr(cls, attr_name)
+            if isinstance(column, Column):
+                if column.label is None:
+                    column.label = attr_name
+                yield column
+
+
+class DeclaredTable(WrappedTable):
+    """A declared table defines columns on declaration time. For example:
+
+    >>> from amcatable import columns
+    >>>
+    >>> class ExampleTable(DeclaredTable):
+    >>>    title = columns.TextColumn()
+    >>>    time = columns.DateTimeColumn()
+    >>>
+    >>> table = ExampleTable(ListTable, rows=[
+    >>>     ["Foo", datetime.datetime.now()],
+    >>>     ["Bar", datetime.datetime.now()],
+    >>> ])
+
+    Declared tables are not dependent on one specific data structure, as it is a WrappedTable.
+    """
+    def __init__(self, table_cls, rows, lazy=True, size_hint=None):
+        columns = self.__class__._get_columns()
+        super().__init__(table_cls(rows, columns, lazy=lazy, size_hint=size_hint))
+
+    @classmethod
+    @functools.lru_cache()
+    def _get_columns(cls):
+        return tuple(sorted(get_declared_columns(cls), key=lambda c: c._creation_counter))
