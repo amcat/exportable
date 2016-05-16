@@ -28,8 +28,10 @@ class Table(object):
         self.lazy = lazy
         self._rows = iter(rows) if lazy else rows
         self._columns = columns
-        self._column_indices = OrderedDict(enumerate(self._columns))
+
+        self._column_indices_rev = OrderedDict((c, i) for i, c in enumerate(self._columns))
         self._column_view_indices = OrderedDict((i, c) for i, c in enumerate(self._columns) if c)
+        self._column_view_indices_rev = OrderedDict((c, i) for i, c in enumerate(self._columns) if c)
 
     @property
     def columns(self) -> Iterable[Column]:
@@ -44,10 +46,11 @@ class Table(object):
             raise LazyTableError("You cannot access rows by index on a lazy table")
         return self._rows[index]
 
-    def get_column(self, index: int):
+    def get_column(self, column: Column):
         if self.lazy:
             raise LazyTableError("You cannot access a single column on a lazy table")
-        return (row[index] for row in self.rows)
+        column_index = self._column_view_indices_rev[column]
+        return (row[column_index] for row in self.rows)
 
     def get_value(self, row, column: Column):
         return self.get_row(row)[self._column_view_indices[column]]
@@ -66,7 +69,7 @@ class ListTable(Table):
     @property
     def rows(self):
         for row in self._rows:
-            yield [row[ci] for ci in self._column_indices]
+            yield [row[ci] for ci in self._column_view_indices]
 
 
 class DictTable(Table):
