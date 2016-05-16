@@ -30,6 +30,7 @@ class Exporter(object):
     def dumps(self, table, filename_hint=None, encoding_hint="utf-8") -> bytes:
         """Export table and return value as bytes.
 
+        @param filename_hint: some formats (such as zipped) need a filename
         @param encoding_hint: encoding for bytes resulting bytes. Doesn't do anything for binary
                               formats such as ODS, XLSX or SPSS.
         """
@@ -45,6 +46,7 @@ class Exporter(object):
         which supports streaming responses through iterators.
 
         @param buffer_size: store up to N write() message in buffer
+        @param filename_hint: some formats (such as zipped) need a filename
         @param encoding_hint: encoding for bytes resulting bytes. Doesn't do anything for binary
                               formats such as ODS, XLSX or SPSS.
         """
@@ -66,6 +68,7 @@ class Exporter(object):
         """Render table as a Django response.
 
         @param filename: filename to suggest to browser
+        @param filename_hint: some formats (such as zipped) need a filename
         @param encoding_hint: encoding for bytes resulting bytes. Doesn't do anything for binary
                               formats such as ODS, XLSX or SPSS.
         @return: Django streaming HTTP response
