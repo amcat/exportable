@@ -7,12 +7,12 @@ class LazyTableError(Exception):
     pass
 
 
-class Table(object):
+class Table:
     def __init__(self, rows: Union[Iterable[Any], Sequence[Any]], columns: Sequence[Column], lazy=True, size_hint=None):
         """
 
         @param rows: list of rows
-        @param columns:
+        @param columns: list of columns
         @param lazy: if True, no random access is allowed
         @param size_hint: (approximate) length of rows. Is used by exporters to determine progress.
         """
@@ -27,7 +27,7 @@ class Table(object):
 
         self.lazy = lazy
         self._rows = iter(rows) if lazy else rows
-        self._columns = columns
+        self._columns = list(columns)
 
         self._column_indices_rev = OrderedDict((c, i) for i, c in enumerate(self._columns))
         self._column_view_indices = OrderedDict((i, c) for i, c in enumerate(self._columns) if c)
@@ -63,8 +63,14 @@ class Table(object):
 
 
 class ListTable(Table):
-    def __init__(self, rows: Iterable[Sequence[Any]], columns, lazy=True):
-        super().__init__(rows, columns, lazy)
+    def __init__(self, rows: Iterable[Sequence[Any]], columns, lazy=True, size_hint=None):
+        """
+        @param rows: list of rows
+        @param columns: if a column is None, skip a field in each row
+        @param lazy: if True, no random access is allowed
+        @param size_hint: (approximate) length of rows. Is used by exporters to determine progress.
+        """
+        super().__init__(rows, columns, lazy=lazy, size_hint=size_hint)
 
     @property
     def rows(self):
@@ -73,9 +79,15 @@ class ListTable(Table):
 
 
 class DictTable(Table):
-    def __init__(self, rows: Iterable[dict], columns, allow_missing=False, lazy=True):
+    def __init__(self, rows: Iterable[dict], columns, allow_missing=False, lazy=True, size_hint=None):
+        """
+        @param rows: list of rows
+        @param columns: list of columns. The label of a column is used to access dictionary.
+        @param lazy: if True, no random access is allowed
+        @param size_hint: (approximate) length of rows. Is used by exporters to determine progress.
+        """
         self.allow_missing = allow_missing
-        super().__init__(rows, columns, lazy)
+        super().__init__(rows, columns, lazy=lazy, size_hint=size_hint)
 
 
     @property
