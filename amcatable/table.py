@@ -7,10 +7,6 @@ from typing import Iterable, Any, Sequence, Union
 from amcatable.columns import Column
 
 
-class LazyTableError(Exception):
-    pass
-
-
 class Table:
     def __init__(self, rows: Union[Iterable[Any], Sequence[Any]], columns: Sequence[Column], lazy=True, size_hint=None):
         """
