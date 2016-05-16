@@ -11,9 +11,9 @@ import os.path
 import logging
 import shutil
 
-from table.columns import Column
-from table.exporters.base import Exporter
-from table.table import Table
+from amcatable.columns import Column
+from amcatable.exporters.base import Exporter
+from amcatable.table import Table
 
 log = logging.getLogger(__name__)
 
@@ -102,7 +102,7 @@ def table2pspp(table: Table, saveas: str):
     _, txt = tempfile.mkstemp(suffix=".txt")
     txt = open(txt, "w", encoding="utf-8")
 
-    # Write table in tab separated format
+    # Write amcatable in tab separated format
     for row in table.rows:
         for i, col in enumerate(table.columns):
             if i: txt.write("\t")
@@ -124,7 +124,7 @@ class PSPPError(Exception):
 
 
 def table2sav(table: Table):
-    _, sav = tempfile.mkstemp(suffix=".sav", prefix="table-")
+    _, sav = tempfile.mkstemp(suffix=".sav", prefix="amcatable-")
 
     log.debug("Check if we've got the right version of PSPP installed")
     version = get_pspp_version()

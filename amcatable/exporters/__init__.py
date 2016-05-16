@@ -1,6 +1,6 @@
-from table.exporters.csv import CSVExporter
-from table.exporters.pyexcel import ODSExporter, XLSXExporter, XLSExporter
-from table.exporters.spss import SPSSExporter, ZippedSPSSExporter
+from amcatable.exporters.csv import CSVExporter
+from amcatable.exporters.pyexcel import ODSExporter, XLSXExporter, XLSExporter
+from amcatable.exporters.spss import SPSSExporter, ZippedSPSSExporter
 
 DEFAULT_EXPORTERS = [
     ODSExporter,

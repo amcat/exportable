@@ -1,6 +1,6 @@
 import csv
 
-from table.exporters.base import Exporter
+from amcatable.exporters.base import Exporter
 
 
 class CSVExporter(Exporter):

@@ -1,7 +1,7 @@
 import itertools
 import pyexcel
 
-from table.exporters.base import Exporter
+from amcatable.exporters.base import Exporter
 
 
 class PyExcelExporter(Exporter):

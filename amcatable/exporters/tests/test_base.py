@@ -1,8 +1,8 @@
 import io
 import unittest
 
-from table.exporters.base import Exporter
-from table.table import ListTable
+from amcatable.exporters.base import Exporter
+from amcatable.table import ListTable
 
 
 class RandomExporter(Exporter):
