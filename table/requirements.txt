@@ -1,1 +1,6 @@
 dateutil
+pyexcel
+pyexcel-io
+pyexcel-ods3
+pyexcel-xlxs
+pyexcel-xls
