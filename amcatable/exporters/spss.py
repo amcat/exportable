@@ -91,11 +91,7 @@ def table2pspp(table: Table, saveas: str):
 
     variables = []
     for col in table.columns:
-        # HACK: Forcefully set column with name date  to datetime
-        if col.label == "date":
-            variables.append(("date", PSPP_TYPES[datetime.datetime]))
-        else:
-            variables.append((varnames[col], PSPP_TYPES[col.type]))
+        variables.append((varnames[col], PSPP_TYPES[col.type]))
     variables = " ".join(map(str, itertools.chain.from_iterable(variables)))
 
     # Open relevant files (reopen so we're sure that we're writing utf-8)
@@ -107,13 +103,7 @@ def table2pspp(table: Table, saveas: str):
         for i, col in enumerate(table.columns):
             if i: txt.write("\t")
             value = table.get_value(row, col)
-
-            # HACK: forcefully convert column 'date' to datetime
-            if value is not None:
-                if col.label == "date":
-                    txt.write(serialize_spss_value(datetime.datetime, dateutil.parser.parse(value)))
-                else:
-                    txt.write(serialize_spss_value(col.type, value))
+            txt.write(serialize_spss_value(col.type, value))
         txt.write("\n")
 
     return txt.name, PSPP_COMMANDS.format(txt=txt.name, sav=saveas, variables=variables)
