@@ -11,7 +11,7 @@ class CSVExporter(Exporter):
         self.dialect = dialect
         self.fmtparams = fmtparams
 
-    def dump(self, table, fo, encoding_hint="utf-8"):
+    def dump(self, table, fo, filename_hint=None, encoding_hint="utf-8"):
         csvf = csv.writer(fo, dialect=self.dialect, **self.fmtparams)
         csvf.writerow([c.label for c in table.column])
         for row in table.rows:

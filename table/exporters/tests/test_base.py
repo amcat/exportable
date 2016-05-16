@@ -9,13 +9,13 @@ class RandomExporter(Exporter):
     def __init__(self, n):
         self.n = n
 
-    def dump(self, table, fo, encoding_hint="utf-8"):
+    def dump(self, table, fo, filename_hint=None, encoding_hint="utf-8"):
         for i in map(str, range(self.n)):
             fo.write(i.encode(encoding_hint))
 
 
 class ErrorExporter(Exporter):
-    def dump(self, table, fo, encoding_hint="utf-8"):
+    def dump(self, table, fo, filename_hint=None, encoding_hint="utf-8"):
         fo.write(b"OK")
         raise ValueError("Woops.")
 

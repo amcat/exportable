@@ -5,7 +5,7 @@ from table.exporters.base import Exporter
 
 
 class PyExcelExporter(Exporter):
-    def dump(self, table, fo, encoding_hint="utf-8"):
+    def dump(self, table, fo, filename_hint=None, encoding_hint="utf-8"):
         colnames = [col.verbose_name for col in table.columns]
         sheet1 = itertools.chain([colnames], table.rows)
         book = pyexcel.Book(sheets={"Sheet 1": sheet1})

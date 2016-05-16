@@ -171,7 +171,7 @@ class SPSSExporter(Exporter):
     extension = "sav"
     content_type = "application/x-spss-sav"
 
-    def dump(self, table, fo, encoding_hint="utf-8"):
+    def dump(self, table, fo, filename_hint=None, encoding_hint="utf-8"):
         # Writing lazily not possible due to desgin of PSPP.
         # TODO: Implement named pipes to prevent storing intermediate results on disk
         sav = open(table2sav(table), "rb")
@@ -188,10 +188,10 @@ class ZippedSPSSExporter(Exporter):
     extension = "sav.zip"
     content_type = "application/zip"
 
-    def dump(self, table, fo, encoding_hint="utf-8"):
+    def dump(self, table, fo, filename_hint=None, encoding_hint="utf-8"):
         with ZipFile(fo, mode="wb") as zip:
             file = table2sav(table)
             try:
-                zip.write(file)
+                zip.write(file, arcname=filename_hint)
             finally:
                 os.unlink(file)
