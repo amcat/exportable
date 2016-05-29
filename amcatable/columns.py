@@ -49,7 +49,11 @@ class Column(object):
         return "" if value is None else str(value)
 
     def __copy__(self):
-        return self.__class__(self.type, self.label, self.cellfunc, self.verbose_name, self._creation_counter)
+        return self.__class__(
+            label=self.label, cellfunc=self.cellfunc,
+            verbose_name=self.verbose_name,
+            _creation_counter=self._creation_counter
+        )
 
     def __repr__(self):
         return "<{}(label={})>".format(self.__class__.__name__, self.label)
