@@ -19,6 +19,7 @@
 import io
 import concurrent.futures
 from contextlib import ContextDecorator
+from gzip import GzipFile
 from queue import Queue, Empty
 
 
@@ -27,7 +28,18 @@ class QueueWriter(ContextDecorator):
         self.queue = queue
 
     def write(self, b):
-        self.queue.put(b)
+        if b:
+            self.queue.put(b)
+
+
+class CompressingQueueWriter():
+    def __init__(self, queue: Queue, compress_level=3):
+        self.queue = queue
+        self.writer = QueueWriter(queue)
+        self.gzip = GzipFile(mode='wb', compresslevel=compress_level, fileobj=self.writer)
+
+    def write(self, b):
+        self.gzip.write(b)
 
 
 class Exporter(object):
@@ -56,10 +68,10 @@ class Exporter(object):
         self.dump(table, fo, filename_hint=filename_hint, encoding_hint=encoding_hint)
         return fo.getvalue()
 
-    def _dump_iter(self, queue: Queue, table, filename_hint=None, encoding_hint="utf-8"):
-        self.dump(table, QueueWriter(queue), filename_hint=filename_hint, encoding_hint=encoding_hint)
+    def _dump_iter(self, queue: Queue, table, writer=None, filename_hint=None, encoding_hint="utf-8"):
+        self.dump(table, (writer or QueueWriter)(queue), filename_hint=filename_hint, encoding_hint=encoding_hint)
 
-    def dump_iter(self, table, buffer_size=20, filename_hint=None, encoding_hint="utf-8") -> [bytes]:
+    def dump_iter(self, table, buffer_size=20, filename_hint=None, writer=None, encoding_hint="utf-8") -> [bytes]:
         """Export amcatable and return an iterator of bytes. This is particularly useful for Django,
         which supports streaming responses through iterators.
 
@@ -70,7 +82,7 @@ class Exporter(object):
         """
         queue = Queue(maxsize=buffer_size)
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(self._dump_iter, queue, table, filename_hint, encoding_hint)
+            future = executor.submit(self._dump_iter, queue, table, writer, filename_hint, encoding_hint)
 
             while future.running() or not queue.empty():
                 try:
@@ -82,7 +94,7 @@ class Exporter(object):
             # If any exceptions occurred while running _dump_iter, the exception will be thrown
             future.result()
 
-    def dump_http_reponse(self, table, filename=None, encoding_hint="utf-8"):
+    def dump_http_reponse(self, table, filename=None, compress=True, compress_level=3, encoding_hint="utf-8"):
         """Render amcatable as a Django response.
 
         @param filename: filename to suggest to browser
@@ -91,10 +103,23 @@ class Exporter(object):
                               formats such as ODS, XLSX or SPSS.
         @return: Django streaming HTTP response
         """
+        # Inline import: not all users of table necessarily use Django
         from django.http.response import StreamingHttpResponse
-        content = self.dump_iter(table, encoding_hint=encoding_hint, filename_hint=filename)
-        response = StreamingHttpResponse(content, content_type=self.content_type)
+
+        if compress:
+            # Pass CompressQueueWriter to enable compression
+            writer = lambda queue: CompressingQueueWriter(queue, compress_level=compress_level)
+            content = self.dump_iter(table, encoding_hint=encoding_hint, filename_hint=filename, writer=writer)
+            response = StreamingHttpResponse(content, content_type=self.content_type)
+            response['Content-Encoding'] = "gzip"
+        else:
+            # Write without compression
+            content = self.dump_iter(table, encoding_hint=encoding_hint, filename_hint=filename)
+            response = StreamingHttpResponse(content, content_type=self.content_type)
+
+        # Set attachment header to have a nice filename when downloading
         if filename:
             attachment = 'attachment; filename="{}.{}"'.format(filename, self.extension)
             response['Content-Disposition'] = attachment
+
         return response

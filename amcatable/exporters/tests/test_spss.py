@@ -174,19 +174,39 @@ class TestSPSSExporter(unittest.TestCase):
         os.unlink(file)
 
 
-    def test_timer_table(self):
-        rows = (
-            [1, None, 3, datetime.datetime.now(), ((string.ascii_lowercase)*2)]
+    def test_compressed_writer(self):
+        # Create a big file to test compression
+        rows = [
+            [1, 2, 3, datetime.datetime.now(), ((string.ascii_lowercase)*2)]
             for _ in range(3000)
+        ]
+
+        table1 = ListTable(size_hint=3000, rows=rows, columns=[
+                IntColumn("a"), IntColumn("b"),
+                IntColumn("c"), DateTimeColumn("d"),
+                TextColumn("e")
+            ]
         )
 
-        table = ListTable(size_hint=3000, rows=rows, columns=[
-                    IntColumn("a"), IntColumn("b"),
-                    IntColumn("c"), DateTimeColumn("d"),
-                    TextColumn("e")
-                ]
-            )
+        table2 = ListTable(size_hint=3000, rows=rows, columns=[
+                IntColumn("a"), IntColumn("b"),
+                IntColumn("c"), DateTimeColumn("d"),
+                TextColumn("e")
+            ]
+        )
 
-        target = open("/dev/null", "wb")
-        with Timer() as t:
-            table.dump(target, SPSSExporter())
+        exporter = SPSSExporter()
+
+        # Export with compression
+        response = exporter.dump_http_reponse(table1, filename="test", compress=True, compress_level=1)
+        compressed_content = b"".join(response.streaming_content)
+
+        # Export without
+        response = exporter.dump_http_reponse(table2, filename="test", compress=False)
+        uncompressed_content = b"".join(response.streaming_content)
+
+        # The compress ratio should be very large due to the large number of filling bytes in SPSS
+        compress_ratio = len(uncompressed_content) / len(compressed_content)
+        self.assertGreaterEqual(compress_ratio, 100)
+
+
