@@ -25,6 +25,13 @@ from typing import Iterable, Any, Sequence, Union
 from amcatable.columns import Column
 
 
+def get_exporter(exporter):
+    if isinstance(exporter, str):
+        from amcatable.exporters import get_exporter_by_extension
+        return get_exporter_by_extension(exporter)
+    return exporter
+
+
 class Table:
     def __init__(self, rows: Union[Iterable[Any], Sequence[Any]], columns: Sequence[Column], lazy=True, size_hint=None):
         """
@@ -96,10 +103,10 @@ class Table:
         self._columns.append(column)
 
     def dump(self, fo, exporter, encoding_hint=None):
-        return exporter.dump(self, fo, encoding_hint=encoding_hint)
+        return get_exporter(exporter).dump(self, fo, encoding_hint=encoding_hint)
 
     def dumps(self, exporter, encoding_hint=None):
-        return exporter.dumps(self, encoding_hint=encoding_hint)
+        return get_exporter(exporter).dumps(self, encoding_hint=encoding_hint)
 
 
 class ListTable(Table):
