@@ -16,18 +16,19 @@
 # You should have received a copy of the GNU Affero General Public        #
 # License along with AmCAT.  If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
+import functools
+import re
+import io
+import struct
 import subprocess
 import itertools
 import tempfile
-from zipfile import ZipFile
-
-import dateutil.parser
-import re
 import datetime
 import collections
 import os.path
 import logging
-import shutil
+
+from threading import Thread
 
 from amcatable.columns import Column
 from amcatable.exporters.base import Exporter
@@ -35,9 +36,8 @@ from amcatable.table import Table
 
 log = logging.getLogger(__name__)
 
-
 # Do not let PSPP documentation get in the way of writing proper PSPP input :)
-MAX_STRING_LENGTH = 32767 # PSPP Maximum per: http://bit.ly/1SVPNfU
+MAX_STRING_LENGTH = 2**15 - 1  # PSPP Maximum per: http://bit.ly/1SVPNfU
 
 PSPP_TYPES = {
     int: "F8.0",
@@ -46,26 +46,25 @@ PSPP_TYPES = {
     datetime.datetime: "DATETIME20"
 }
 
-PSPP_SERIALIZERS = {
-    type(None): lambda n: "",
-    str: lambda s: s.replace('\n', ". ").replace("\r", "").replace("\t", " ")[:MAX_STRING_LENGTH],
-    datetime.datetime: lambda d: d.strftime("%d-%b-%Y-%H:%M:%S").upper()
-}
-
 PSPP_COMMANDS = r"""
 GET DATA
     /type=txt
-    /file="{txt}"
+    /file="{infile}"
     /encoding="utf-8"
     /arrangement=delimited
     /delimiters="\t"
     /qualifier=""
     /variables {variables}.
-SAVE OUTFILE='{sav}'.
+SAVE
+    /compressed
+    /outfile='{outfile}'.
 """
 
 PSPP_VERSION_RE = re.compile(b"pspp \(GNU PSPP\) (\d+)\.(\d+).(\d+)")
 PSPPVersion = collections.namedtuple("PSPPVersion", ["major", "minor", "micro"])
+
+class PSPPError(Exception):
+    pass
 
 
 def get_pspp_version() -> PSPPVersion:
@@ -84,7 +83,7 @@ def get_pspp_version() -> PSPPVersion:
 
 
 def get_var_name(col: Column, seen: set):
-    fn = str(col).replace(" ", "_")
+    fn = col.label.replace(" ", "_")
     fn = fn.replace("-", "_")
     fn = re.sub('[^a-zA-Z_]+', '', fn)
     fn = re.sub('^_+', '', fn)
@@ -98,47 +97,30 @@ def get_var_name(col: Column, seen: set):
     return fn
 
 
-def serialize_spss_value(typ, value, default=lambda o: str(o)):
-    return PSPP_SERIALIZERS.get(typ, default)(value)
-
-
-def table2pspp(table: Table, saveas: str):
+@functools.lru_cache(maxsize=128)
+def get_pspp_commands(table: Table, outfile: str, infile="/dev/null") -> bytes:
     # Deduce cleaned variable names and variable types
     seen = set()
     varnames = {col: get_var_name(col, seen) for col in table.columns}
-
-    variables = []
-    for col in table.columns:
-        variables.append((varnames[col], PSPP_TYPES[col.type]))
+    variables = [(varnames[col], PSPP_TYPES[col.type]) for col in table.columns]
     variables = " ".join(map(str, itertools.chain.from_iterable(variables)))
-
-    # Open relevant files (reopen so we're sure that we're writing utf-8)
-    _, txt = tempfile.mkstemp(suffix=".txt")
-    txt = open(txt, "w", encoding="utf-8")
-
-    # Write amcatable in tab separated format
-    for row in table.rows:
-        for i, col in enumerate(table.columns):
-            if i: txt.write("\t")
-            value = table.get_value(row, col)
-            txt.write(serialize_spss_value(col.type, value))
-        txt.write("\n")
-
-    return txt.name, PSPP_COMMANDS.format(txt=txt.name, sav=saveas, variables=variables)
+    commands = PSPP_COMMANDS.format(infile=infile, outfile=outfile, variables=variables)
+    return commands.encode()
 
 
-class PSPPError(Exception):
-    pass
+def chunkify(it, size=0):
+    if not size:
+        return it
+
+    filler = object()
+    iters = [iter(it)] * size
+
+    for chunk in itertools.zip_longest(*iters, fillvalue=filler):
+        yield (value for value in chunk if value is not filler)
 
 
-def table2sav(table: Table):
-    _, sav = tempfile.mkstemp(suffix=".sav", prefix="amcatable-")
-
-    log.debug("Check if we've got the right version of PSPP installed")
-    version = get_pspp_version()
-    if version < PSPPVersion(0, 8, 5):
-        raise PSPPVersion("Expected pspp>=8.5.0, but found {}".format(version))
-
+def exec_pspp(commands: bytes):
+    """Executes PSPP with given commands as input (through stdin)."""
     log.debug("Starting PSPP")
     pspp = subprocess.Popen(
         ["pspp", "-b"],
@@ -147,18 +129,11 @@ def table2sav(table: Table):
         stderr=subprocess.PIPE
     )
 
-    log.debug("Generating SPSS code..")
-    txt, pspp_code = table2pspp(table, sav)
-
-    log.debug("Encoding PSPP code as ASCII..")
-    pspp_code = pspp_code.encode("ascii")
-
     log.debug("Sending code to pspp..")
-    stdout, stderr = pspp.communicate(input=pspp_code)
-    os.unlink(txt)
+    stdout, stderr = pspp.communicate(input=commands)
 
-    stdout = stdout.decode("utf-8")
-    stderr = stderr.decode("utf-8")
+    stdout = stdout.decode()
+    stderr = stderr.decode()
 
     log.debug("PSPP stderr: %s" % stderr)
     log.debug("PSPP stdout: %s" % stdout)
@@ -170,9 +145,119 @@ def table2sav(table: Table):
         raise PSPPError(stderr)
     if "error:" in stdout.lower():
         raise PSPPError("PSPP Exited with error: \n\n%s" % stdout)
-    if not os.path.exists(sav):
-        raise PSPPError("PSPP Exited without errors, but file was not saved.\n\nOut=%r\n\nErr=%r" % (stdout, stderr))
-    return sav
+
+
+def copyfileobj(fsrc, fdst, length=16*1024, skip_first=0):
+    """Copy of shutil.copyfileobj, with added 'skip_first' parameter."""
+    fsrc.read(skip_first)
+    while 1:
+        buf = fsrc.read(length)
+        if not buf:
+            break
+        fdst.write(buf)
+
+
+def serialize_str(s):
+    return s.replace('\n', ". ").replace("\r", "").replace("\t", " ")[:MAX_STRING_LENGTH]
+
+
+def serialize_datetime(timestamp):
+    return timestamp.strftime("%d-%b-%Y-%H:%M:%S").upper()
+
+
+def serialize_date(date):
+    return serialize_datetime(datetime.datetime(date.year, date.month, date.day))
+
+
+def get_serializer(column):
+    if column.type == str:
+        return serialize_str
+    elif column.type in (int, float):
+        return str
+    elif column.type == datetime.datetime:
+        return serialize_datetime
+    elif column.type == datetime.date:
+        return serialize_date
+    else:
+        raise ValueError("Did not recognize serializer type for: {}".format(column))
+
+
+def write_data(table: Table, rows, fp):
+    serializers = list(map(get_serializer, table.columns))
+    for row in rows:
+        for serializer, value in zip(serializers, row):
+            if value is not None:
+                fp.write(serializer(value).encode())
+            fp.write(b"\t")
+        fp.write(b"\n")
+    fp.close()
+
+
+def write_table(table, fp, chunksize=1000):
+    """
+    Write a given table to a file like object. Depending on the chunk size, this function will not
+    load all rows of the table in memory at once.
+
+    @param table: table to serialize to a SPSS system file
+    @param fp: file like object to write to
+    @param chunksize: if 0, do not use chunks (keeps every row in memory!)
+    """
+    log.debug("Check if we've got the right version of PSPP installed")
+    version = get_pspp_version()
+    if version < PSPPVersion(0, 8, 5):
+        raise PSPPVersion("Expected pspp>=8.5.0, but found {}".format(version))
+
+    # Create fifos
+    tmp_dir = tempfile.mkdtemp(prefix="amcat-pspp-")
+    fifo_in = os.path.join(tmp_dir, "in.txt")
+    fifo_out = os.path.join(tmp_dir, "out.sav")
+    os.mkfifo(fifo_in)
+    os.mkfifo(fifo_out)
+
+    try:
+        # Prepare buffer for header
+        header_buffer = io.BytesIO()
+        out_copy_target = lambda: copyfileobj(open(fifo_out, "rb"), header_buffer)
+        out_copy_thread = Thread(target=out_copy_target)
+        out_copy_thread.start()
+
+        # Execute PSPP
+        exec_pspp(get_pspp_commands(table, fifo_out))
+
+        # Wait for copying to finish
+        out_copy_thread.join()
+
+        # Write expected number of rows to header
+        header_buffer.seek(0x50)
+        header_buffer.write(struct.pack("<i", len(table)))
+        header_buffer.seek(0)
+        copyfileobj(header_buffer, fp)
+
+        # Determine header length
+        header_length = len(header_buffer.getvalue())
+
+        # Write data in chunks
+        for chunk in chunkify(table.rows, size=chunksize):
+            # PSPP outfile -> caller buffer. We skip writing the header, only data.
+            out_copy_target = lambda: copyfileobj(open(fifo_out, "rb"), fp, skip_first=header_length)
+            out_copy_thread = Thread(target=out_copy_target)
+            out_copy_thread.start()
+
+            # Table row chunk -> PSPP
+            in_copy_target = lambda: write_data(table, chunk, open(fifo_in, "wb"))
+            in_copy_thread = Thread(target=in_copy_target)
+            in_copy_thread.start()
+
+            # let PSPP generate data for given chunk
+            exec_pspp(get_pspp_commands(table, fifo_out, fifo_in))
+
+            out_copy_thread.join()
+            in_copy_thread.join()
+
+    finally:
+        os.unlink(fifo_in)
+        os.unlink(fifo_out)
+        os.removedirs(tmp_dir)
 
 
 class SPSSExporter(Exporter):
@@ -180,26 +265,5 @@ class SPSSExporter(Exporter):
     content_type = "application/x-spss-sav"
 
     def dump(self, table, fo, filename_hint=None, encoding_hint="utf-8"):
-        # Writing lazily not possible due to desgin of PSPP.
-        # TODO: Implement named pipes to prevent storing intermediate results on disk
-        sav = open(table2sav(table), "rb")
+        write_table(table, fo)
 
-        # Unlinking before reading is save on Linux. Even if copying goes wrong, Linux will
-        # cleanup the disk for us.
-        os.unlink(sav.name)
-
-        # Copy in chunks
-        shutil.copyfileobj(sav, fo)
-
-
-class ZippedSPSSExporter(Exporter):
-    extension = "sav.zip"
-    content_type = "application/zip"
-
-    def dump(self, table, fo, filename_hint=None, encoding_hint="utf-8"):
-        with ZipFile(fo, mode="wb") as zip:
-            file = table2sav(table)
-            try:
-                zip.write(file, arcname=filename_hint)
-            finally:
-                os.unlink(file)

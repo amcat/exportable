@@ -16,21 +16,39 @@
 # You should have received a copy of the GNU Affero General Public        #
 # License along with AmCAT.  If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
-from amcatable.exporters.csv import CSVExporter
-from amcatable.exporters.pyexcel import ODSExporter, XLSXExporter, XLSExporter
-from amcatable.exporters.spss import SPSSExporter
+import string
+import time
+import datetime
+import unittest
 
-DEFAULT_EXPORTERS = [
-    ODSExporter,
-    XLSXExporter,
-    XLSExporter,
-    CSVExporter,
-    SPSSExporter
-]
+from amcatable.columns import IntColumn, DateTimeColumn, TextColumn
+from amcatable.exporters import SPSSExporter
+from amcatable.table import ListTable
+
+class Timer:
+    def __enter__(self):
+        self.start = time.clock()
+        return self
+
+    def __exit__(self, *args):
+        self.end = time.clock()
+        self.interval = self.end - self.start
 
 
-def get_exporter_by_extension(extension):
-    for exporter in DEFAULT_EXPORTERS:
-        if exporter.extension == extension:
-            return exporter
-    raise ValueError("No exporter with extension {} in DEFAULT_EXPORTERS.".format(extension))
+class TestSPSSExporter(unittest.TestCase):
+    def test_simple_table(self):
+        rows = (
+            [1, None, 3, datetime.datetime.now(), ((string.ascii_lowercase)*2)]
+            for _ in range(100000)
+        )
+
+        table = ListTable(size_hint=100000, rows=rows, columns=[
+                    IntColumn("a"), IntColumn("b"),
+                    IntColumn("c"), DateTimeColumn("d"),
+                    TextColumn("e")
+                ]
+            )
+
+        target = open("/dev/null", "wb")
+        with Timer() as t:
+            table.dump(target, SPSSExporter())
