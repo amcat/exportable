@@ -48,7 +48,7 @@ class Table:
         self._columns = [copy.copy(column) for column in columns]
 
         for i, column in enumerate(self._columns):
-            if column.label is None:
+            if column is not None and column.label is None:
                 error = "Each column MUST have a label upon table instantiation. {} ({}) has none."
                 raise ValueError(error.format(column, i))
 
@@ -63,6 +63,11 @@ class Table:
                 column._index = index
                 column._view_index = view_index
                 view_index += 1
+
+    def __len__(self):
+        if self.size_hint is None:
+            raise TypeError("No size_hint has been given to this table, and no size could be determined from (lazy?) source.")
+        return self.size_hint
 
     def to_strict(self):
         """Convert this (lazy) amcatable into a non-lazy (strict) one."""
