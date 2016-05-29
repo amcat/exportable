@@ -45,6 +45,7 @@ class CompressingQueueWriter():
 class Exporter(object):
     extension = None
     content_type = None
+    compressable = True
 
     def dump(self, table, fo, filename_hint=None, encoding_hint="utf-8"):
         """Write contents of a amcatable to file like object. The only method the file like object
@@ -106,7 +107,7 @@ class Exporter(object):
         # Inline import: not all users of table necessarily use Django
         from django.http.response import StreamingHttpResponse
 
-        if compress:
+        if compress and self.compressable:
             # Pass CompressQueueWriter to enable compression
             writer = lambda queue: CompressingQueueWriter(queue, compress_level=compress_level)
             content = self.dump_iter(table, encoding_hint=encoding_hint, filename_hint=filename, writer=writer)

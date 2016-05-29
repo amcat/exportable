@@ -36,16 +36,19 @@ class PyExcelExporter(Exporter):
 class ODSExporter(PyExcelExporter):
     extension = "ods"
     content_type = "application/vnd.oasis.opendocument.spreadsheet"
+    compressable = False
 
 
 class XLSExporter(PyExcelExporter):
     extension = "xls"
     content_type = "application/vnd.ms-excel"
+    compressable = False
 
 
 class XLSXExporter(PyExcelExporter):
     extension = "xlsx"
     content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    compressable = False
 
 
 #class CSVExporter(PyExcelExporter):
