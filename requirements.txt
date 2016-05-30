@@ -5,3 +5,4 @@ pyexcel-ods3
 pyexcel-xlxs
 pyexcel-xls
 typing
+sphinx_epytext
