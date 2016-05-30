@@ -1,13 +1,13 @@
 Columns
 =====================================
 
-.. autoclass:: amcatable.columns.Column
+.. autoclass:: exportable.columns.Column
    :members:
-.. autoclass:: amcatable.columns.TextColumn
-.. autoclass:: amcatable.columns.IntColumn
-.. autoclass:: amcatable.columns.FloatColumn
-.. autoclass:: amcatable.columns.DateColumn
-.. autoclass:: amcatable.columns.DateTimeColumn
+.. autoclass:: exportable.columns.TextColumn
+.. autoclass:: exportable.columns.IntColumn
+.. autoclass:: exportable.columns.FloatColumn
+.. autoclass:: exportable.columns.DateColumn
+.. autoclass:: exportable.columns.DateTimeColumn
 
 Indices and tables
 ------------------

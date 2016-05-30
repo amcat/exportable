@@ -25,10 +25,10 @@ import unittest
 
 import subprocess
 
-from amcatable.columns import IntColumn, DateTimeColumn, TextColumn, FloatColumn
-from amcatable.exporters import SPSSExporter
-from amcatable.exporters.spss import write_table
-from amcatable.table import ListTable
+from exportable.columns import IntColumn, DateTimeColumn, TextColumn, FloatColumn
+from exportable.exporters import SPSSExporter
+from exportable.exporters.spss import write_table
+from exportable.table import ListTable
 
 class Timer:
     def __enter__(self):

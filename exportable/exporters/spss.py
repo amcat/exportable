@@ -30,9 +30,9 @@ import logging
 
 from threading import Thread
 
-from amcatable.columns import Column
-from amcatable.exporters.base import Exporter
-from amcatable.table import Table
+from exportable.columns import Column
+from exportable.exporters.base import Exporter
+from exportable.table import Table
 
 log = logging.getLogger(__name__)
 

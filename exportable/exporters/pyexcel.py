@@ -16,48 +16,41 @@
 # You should have received a copy of the GNU Affero General Public        #
 # License along with AmCAT.  If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
-import io
-import unittest
+import itertools
+import pyexcel
 
-from amcatable.exporters.base import Exporter
-from amcatable.table import ListTable
+from exportable.exporters.base import Exporter
 
 
-class RandomExporter(Exporter):
-    def __init__(self, n):
-        self.n = n
-
+class PyExcelExporter(Exporter):
     def dump(self, table, fo, filename_hint=None, encoding_hint="utf-8"):
-        for i in map(str, range(self.n)):
-            fo.write(i.encode(encoding_hint))
+        colnames = [col.verbose_name for col in table.columns]
+        sheet1 = itertools.chain([colnames], table.rows)
+        book = pyexcel.Book(sheets={"Sheet 1": sheet1})
+        self.dump_book(book, fo, encoding_hint=encoding_hint)
+
+    def dump_book(self, book: pyexcel.Book, fo, encoding_hint="utf-8"):
+        book.save_to_memory(self.extension, fo)
 
 
-class ErrorExporter(Exporter):
-    def dump(self, table, fo, filename_hint=None, encoding_hint="utf-8"):
-        fo.write(b"OK")
-        raise ValueError("Woops.")
+class ODSExporter(PyExcelExporter):
+    extension = "ods"
+    content_type = "application/vnd.oasis.opendocument.spreadsheet"
+    compressable = False
 
 
-class TestBaseExporter(unittest.TestCase):
-    def test_randomised(self):
-        """Methods such as dump_iter use threads. We test their implementation by running it
-        through thousands of randomised values in order to detect threading issues."""
-        table = ListTable(rows=[], columns=[])
-        re = RandomExporter(n=1000)
+class XLSExporter(PyExcelExporter):
+    extension = "xls"
+    content_type = "application/vnd.ms-excel"
+    compressable = False
 
-        # Test dump()
-        buffer = io.BytesIO()
-        re.dump(table, buffer)
-        expected = "".join(map(str, range(1000))).encode()
-        self.assertEqual(expected, buffer.getvalue())
 
-        # Test dump_iter()
-        for i, enc in enumerate(re.dump_iter(table)):
-            self.assertEqual(str(i).encode(), enc)
-        self.assertEqual(1000, sum(1 for _ in re.dump_iter(table)))
+class XLSXExporter(PyExcelExporter):
+    extension = "xlsx"
+    content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    compressable = False
 
-    def test_error_handling_dump_iter(self):
-        """Are error messages correctly surfaced?"""
-        table = ListTable(rows=[], columns=[])
-        seq = ErrorExporter().dump_iter(table)
-        self.assertRaises(ValueError, list, seq)
+
+#class CSVExporter(PyExcelExporter):
+#    extension = "csv"
+#    content_type = "text/csv"

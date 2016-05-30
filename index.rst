@@ -1,4 +1,4 @@
-Welcome to amcatable's documentation!
+Welcome to exportable's documentation!
 =====================================
 
 Contents:

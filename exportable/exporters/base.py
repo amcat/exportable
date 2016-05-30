@@ -53,7 +53,7 @@ class Exporter(object):
     compressable = True
 
     def dump(self, table, fo, filename_hint=None, encoding_hint="utf-8"):
-        """Write contents of a amcatable to file like object. The only method the file like object
+        """Write contents of a exportable to file like object. The only method the file like object
         needs to support is write, which should take bytes.
 
         @param fo: file like object
@@ -64,7 +64,7 @@ class Exporter(object):
         raise NotImplementedError("Subclasses should implement this method.")
 
     def dumps(self, table, filename_hint=None, encoding_hint="utf-8") -> bytes:
-        """Export amcatable and return value as bytes.
+        """Export exportable and return value as bytes.
 
         @param filename_hint: some formats (such as zipped) need a filename
         @param encoding_hint: encoding for bytes resulting bytes. Doesn't do anything for binary
@@ -78,7 +78,7 @@ class Exporter(object):
         self.dump(table, (writer or QueueWriter)(queue), filename_hint=filename_hint, encoding_hint=encoding_hint)
 
     def dump_iter(self, table, buffer_size=20, filename_hint=None, writer=None, encoding_hint="utf-8") -> [bytes]:
-        """Export amcatable and return an iterator of bytes. This is particularly useful for Django,
+        """Export exportable and return an iterator of bytes. This is particularly useful for Django,
         which supports streaming responses through iterators.
 
         @param buffer_size: store up to N write() message in buffer
@@ -101,7 +101,7 @@ class Exporter(object):
             future.result()
 
     def dump_http_reponse(self, table, filename=None, compress=True, compress_level=3, encoding_hint="utf-8"):
-        """Render amcatable as a Django response.
+        """Render exportable as a Django response.
 
         @param filename: filename to suggest to browser
         @param filename_hint: some formats (such as zipped) need a filename

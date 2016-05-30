@@ -1,7 +1,7 @@
 # Exportable
-*API documentation can be found on [amcatable.readthedocs.io](http://amcatable.readthedocs.io/en/latest/)!*
+*API documentation can be found on [exportable.readthedocs.io](http://exportable.readthedocs.io/en/latest/)!*
 
-`amcatable` aims to make it easy to export all kinds of data to various formats. There is a focus on lazyness, speed, and a low memory footprint. Currently, it supports the following formats:
+`exportable` aims to make it easy to export all kinds of data to various formats. There is a focus on lazyness, speed, and a low memory footprint. Currently, it supports the following formats:
 
 * SPSS (sav)
 * ~~R (rda)~~
@@ -56,7 +56,7 @@ Implicitly select an exporter using a file extension:
 Explicitly select an exporter by importing it:
 
 ```python
->>> from amcatable.exporters import XLSXEporter
+>>> from exportable.exporters import XLSXEporter
 >>> my_file = open("myfile.xlsx", "wb")
 >>> table.dump(my_file, XLSXExporter())
 ```

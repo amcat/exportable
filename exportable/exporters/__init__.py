@@ -16,10 +16,10 @@
 # You should have received a copy of the GNU Affero General Public        #
 # License along with AmCAT.  If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
-from amcatable.exporters.base import Exporter
-from amcatable.exporters.csv import CSVExporter
-from amcatable.exporters.pyexcel import ODSExporter, XLSXExporter, XLSExporter
-from amcatable.exporters.spss import SPSSExporter
+from exportable.exporters.base import Exporter
+from exportable.exporters.csv import CSVExporter
+from exportable.exporters.pyexcel import ODSExporter, XLSXExporter, XLSExporter
+from exportable.exporters.spss import SPSSExporter
 
 DEFAULT_EXPORTERS = [
     ODSExporter,

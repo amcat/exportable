@@ -1,13 +1,13 @@
 Exporters
 =====================================
 
-.. autoclass:: amcatable.exporters.Exporter
+.. autoclass:: exportable.exporters.Exporter
    :members:
-.. autoclass:: amcatable.exporters.CSVExporter
-.. autoclass:: amcatable.exporters.ODSExporter
-.. autoclass:: amcatable.exporters.SPSSExporter
-.. autoclass:: amcatable.exporters.XLSExporter
-.. autoclass:: amcatable.exporters.XLSXExporter
+.. autoclass:: exportable.exporters.CSVExporter
+.. autoclass:: exportable.exporters.ODSExporter
+.. autoclass:: exportable.exporters.SPSSExporter
+.. autoclass:: exportable.exporters.XLSExporter
+.. autoclass:: exportable.exporters.XLSXExporter
 
 Indices and tables
 ------------------

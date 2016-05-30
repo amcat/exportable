@@ -1,7 +1,7 @@
 Table
 =====================================
 
-.. automodule:: amcatable.table
+.. automodule:: exportable.table
    :members:
 
 Indices and tables

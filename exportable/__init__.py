@@ -17,4 +17,4 @@
 # License along with AmCAT.  If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
 from .table import Table
-from amcatable.table import DeclaredTable
+from exportable.table import DeclaredTable

@@ -22,12 +22,12 @@ import functools
 import itertools
 
 from typing import Iterable, Any, Sequence, Union
-from amcatable.columns import Column
+from exportable.columns import Column
 
 
 def get_exporter(exporter):
     if isinstance(exporter, str):
-        from amcatable.exporters import get_exporter_by_extension
+        from exportable.exporters import get_exporter_by_extension
         return get_exporter_by_extension(exporter)
     return exporter
 
@@ -79,7 +79,7 @@ class Table:
         return self.size_hint
 
     def to_strict(self):
-        """Convert this (lazy) amcatable into a non-lazy (strict) one."""
+        """Convert this (lazy) exportable into a non-lazy (strict) one."""
         if self.lazy:
             self._rows = list(self._rows)
             self.lazy = False
@@ -113,7 +113,7 @@ class Table:
 
 class ListTable(Table):
     """
-    >>> from amcatable.columns import IntColumn
+    >>> from exportable.columns import IntColumn
     >>>
     >>> table = ListTable(
     >>>     rows=[
@@ -223,7 +223,7 @@ def get_declared_columns(cls):
 class DeclaredTable(WrappedTable):
     """A declared table defines columns on declaration time. For example:
 
-    >>> from amcatable import columns
+    >>> from exportable import columns
     >>>
     >>> class ExampleTable(DeclaredTable):
     >>>    title = columns.TextColumn()
