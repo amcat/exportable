@@ -1,4 +1,6 @@
 # AmCATable
+*API documentation can be found on [amcatable.readthedocs.io](http://amcatable.readthedocs.io/en/latest/)!*
+
 `amcatable` aims to make it easy to export all kinds of data to various formats. There is a focus on lazyness, speed, and a low memory footprint. Currently, it supports the following formats:
 
 * SPSS (sav)
