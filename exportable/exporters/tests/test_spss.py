@@ -124,7 +124,7 @@ class TestSPSSExporter(unittest.TestCase):
             stderr=subprocess.PIPE
         )
 
-        input = b"get file='%s'.\nlist.\nshow n.\n" % file.encode("utf-8")
+        input = b"get file='" + file.encode("utf-8") + b"'.\nlist.\nshow n.\n"
         stdout, stderr = pspp.communicate(input=input, timeout=30)
         self.assertIn(b"N is 4.", stdout)
 
@@ -142,7 +142,7 @@ class TestSPSSExporter(unittest.TestCase):
             stderr=subprocess.PIPE
         )
 
-        input = b"get file='%s'.\nlist.\nshow n.\n" % file.encode("utf-8")
+        input = b"get file='" + file.encode("utf-8") + b"'.\nlist.\nshow n.\n"
         stdout, stderr = pspp.communicate(input=input, timeout=30)
         self.assertIn(b"N is 3.", stdout)
         self.assertIn(b"74321", stdout)
@@ -160,7 +160,7 @@ class TestSPSSExporter(unittest.TestCase):
             stderr=subprocess.PIPE
         )
 
-        input = b"get file='%s'.\nlist.\nshow n.\n" % file.encode("utf-8")
+        input = b"get file='" + file.encode("utf-8") + b"'.\nlist.\nshow n.\n"
         stdout, stderr = pspp.communicate(input=input, timeout=30)
         self.assertIn(b"N is 4.", stdout)
         self.assertIn(b"08-SEP-2020 00:00:00", stdout)
