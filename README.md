@@ -1,4 +1,4 @@
-# AmCATable
+# Exportable
 *API documentation can be found on [amcatable.readthedocs.io](http://amcatable.readthedocs.io/en/latest/)!*
 
 `amcatable` aims to make it easy to export all kinds of data to various formats. There is a focus on lazyness, speed, and a low memory footprint. Currently, it supports the following formats:
@@ -7,6 +7,19 @@
 * ~~R (rda)~~
 * Excel (xlsx, xls)
 * Text (csv, ~~latex~~, ~~html~~)
+
+The characteristics of the various formats is a follows:
+
+|       | Lazy[1]  | Binary |
+|-------|----------|--------|
+| SPSS  | X[2]     | X      |
+| RDA   |          | X      |
+| XLS   | X        | X      |
+| XLSX  | X        | X      |
+| Text  | X        |        |
+
+* [1] Can operate on lazy data and will write its results in a 'streaming' fashion.
+* [2] Needs `size_hint` in order to be lazy
 
 All tables are exportable to Django streaming responses as well, making it easy to integrate into your existing web projects.
 
