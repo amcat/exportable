@@ -1,4 +1,4 @@
-dateutil
+python-dateutil
 pyexcel
 pyexcel-io
 pyexcel-ods3
