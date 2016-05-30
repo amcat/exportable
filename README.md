@@ -1,5 +1,5 @@
 # AmCATable
-`amcattable` aims to make it easy to export all kinds of data to various formats. There is a focus on lazyness, speed, and a low memory footprint. Currently, it supports the following formats:
+`amcatable` aims to make it easy to export all kinds of data to various formats. There is a focus on lazyness, speed, and a low memory footprint. Currently, it supports the following formats:
 
 * SPSS (sav)
 * ~~R (rda)~~

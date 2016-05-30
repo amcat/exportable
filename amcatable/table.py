@@ -33,14 +33,16 @@ def get_exporter(exporter):
 
 
 class Table:
-    def __init__(self, rows: Union[Iterable[Any], Sequence[Any]], columns: Sequence[Column], lazy=True, size_hint=None):
-        """
+    """
+    Abstract class. Subclasses only need to implement get_value().
 
-        @param rows: list of rows
-        @param columns: list of columns
-        @param lazy: if True, no random access is allowed
-        @param size_hint: (approximate) length of rows. Is used by exporters to determine progress.
-        """
+    @param rows: data source. Format depends on the subclass.
+    @param lazy: if True, no random access is allowed. This is the preferred way of initializing
+                 a table, as it won't hold the whole table in memory.
+    @param size_hint: length of rows. Is used by exporters to determine progress, and some other
+                      exporters to write proper binary files.
+    """
+    def __init__(self, rows: Union[Iterable[Any]], columns: Sequence[Column], lazy=True, size_hint=None):
         # If no size_hint is given, try to guess the size by querying rows.
         if size_hint is None:
             try:
@@ -110,13 +112,28 @@ class Table:
 
 
 class ListTable(Table):
+    """
+    >>> from amcatable.columns import IntColumn
+    >>>
+    >>> table = ListTable(
+    >>>     rows=[
+    >>>         [1, 2, 3],
+    >>>         [4, 5, 6]
+    >>>     ],
+    >>>     columns=[
+    >>>         IntColumn(),
+    >>>         None,
+    >>>         IntColumn()
+    >>>      ]
+    >>> )
+    >>>
+    >>> list(table.rows)
+    >>> [[1, 3], [4, 6]]
+
+    @param rows: list of lists
+    @param columns: if a column is None, skip a field in each row
+    """
     def __init__(self, rows: Iterable[Sequence[Any]], columns, lazy=True, size_hint=None):
-        """
-        @param rows: list of rows
-        @param columns: if a column is None, skip a field in each row
-        @param lazy: if True, no random access is allowed
-        @param size_hint: (approximate) length of rows. Is used by exporters to determine progress.
-        """
         super().__init__(rows, columns, lazy=lazy, size_hint=size_hint)
 
     def get_value(self, row, column: Column):
@@ -126,13 +143,13 @@ class ListTable(Table):
 
 
 class DictTable(Table):
+    """
+    Similar to ListTable, but uses a list of dicts.
+
+    @param rows: list of dicts
+    @param columns: list of columns. The label of a column is used to access dictionary.
+    """
     def __init__(self, rows: Iterable[dict], columns, lazy=True, size_hint=None):
-        """
-        @param rows: list of rows
-        @param columns: list of columns. The label of a column is used to access dictionary.
-        @param lazy: if True, no random access is allowed
-        @param size_hint: (approximate) length of rows. Is used by exporters to determine progress.
-        """
         super().__init__(rows, columns, lazy=lazy, size_hint=size_hint)
 
     def get_value(self, row, column: Column):
@@ -142,13 +159,13 @@ class DictTable(Table):
 
 
 class AttributeTable(Table):
+    """
+    Similar to ListTable, but uses a list of objects.
+
+    @param rows: list of rows
+    @param columns: list of columns. The label of a column is used to access attributes.
+    """
     def __init__(self, rows: Iterable[dict], columns, lazy=True, size_hint=None):
-        """
-        @param rows: list of rows
-        @param columns: list of columns. The label of a column is used to access dictionary.
-        @param lazy: if True, no random access is allowed
-        @param size_hint: (approximate) length of rows. Is used by exporters to determine progress.
-        """
         super().__init__(rows, columns, lazy=lazy, size_hint=size_hint)
 
     def get_value(self, row, column: Column):
@@ -176,7 +193,7 @@ class WrappedTable:
 
 class SortedTable(WrappedTable):
     """A sorted table sorts its rows according to a user defined function."""
-    def __init__(self, table, key, reverse=False):
+    def __init__(self, table: Table, key, reverse=False):
         """
         @param table: table to wrap
         @param key: lambda function passed to sorted(). Is given a row.

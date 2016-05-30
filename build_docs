@@ -1,0 +1,4 @@
+#!/bin/bash
+touch index.rst
+touch docs/*.rst
+sphinx-build -b html . ./_build

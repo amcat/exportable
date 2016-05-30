@@ -43,6 +43,11 @@ class CompressingQueueWriter():
 
 
 class Exporter(object):
+    """
+    Exporters take a table and turn it into some other format. Subclasses only need to implement
+    Exporter.dump(): all other methods are relying on this one. Subsequently, this abstract class
+    doesn't implement it.
+    """
     extension = None
     content_type = None
     compressable = True

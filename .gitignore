@@ -50,3 +50,8 @@ nosetests.xml
 navigator/media/static
 static/components/
 env
+
+# sphinx
+_build
+_static
+_templates
