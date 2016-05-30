@@ -2,7 +2,7 @@ python-dateutil
 pyexcel
 pyexcel-io
 pyexcel-ods3
-pyexcel-xlxs
+pyexcel-xlsx
 pyexcel-xls
 typing
 sphinx_epytext
