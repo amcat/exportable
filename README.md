@@ -10,13 +10,13 @@
 
 The characteristics of the various formats is a follows:
 
-|       | Lazy[1]  | Binary |
-|-------|----------|--------|
-| SPSS  | X[2]     | X      |
-| RDA   |          | X      |
-| XLS   | X        | X      |
-| XLSX  | X        | X      |
-| Text  | X        |        |
+|       | Lazy[1]  | Native types          |
+|-------|----------|-----------------------|
+| SPSS  | X[2]     | Float, text, datetime |
+| RDA   |          | All      |
+| XLS   | X        | All      |
+| XLSX  | X        | All      |
+| Text  | X        | Text     |
 
 * [1] Can operate on lazy data and will write its results in a 'streaming' fashion.
 * [2] Needs `size_hint` in order to be lazy
