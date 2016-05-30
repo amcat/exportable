@@ -27,7 +27,7 @@ All tables are exportable to Django streaming responses as well, making it easy 
 The examples below (unless specified otherwise) assume the followig code prepending it:
 
 ```python
-from amcattable import ListTable, columns
+from exportable import ListTable, columns
 
 table = ListTable(
     columns=[
