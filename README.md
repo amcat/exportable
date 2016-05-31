@@ -6,7 +6,7 @@
 * SPSS (sav)
 * ~~R (rda)~~
 * Excel (xlsx, xls)
-* Text (csv, ~~latex~~, ~~html~~)
+* Text (csv, json, ~~latex~~, ~~html~~)
 
 The characteristics of the various formats is a follows:
 
