@@ -16,24 +16,41 @@
 # You should have received a copy of the GNU Affero General Public        #
 # License along with AmCAT.  If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
-from exportable.exporters.base import Exporter
-from exportable.exporters.csv import CSVExporter
-from exportable.exporters.pyexcel import ODSExporter, XLSXExporter, XLSExporter
-from exportable.exporters.spss import SPSSExporter
-from exportable.exporters.json import JSONExporter
+import datetime
+import json
+import unittest
 
-DEFAULT_EXPORTERS = [
-    JSONExporter,
-    ODSExporter,
-    XLSXExporter,
-    XLSExporter,
-    CSVExporter,
-    SPSSExporter
-]
+from exportable import columns
+from exportable.table import ListTable
 
 
-def get_exporter_by_extension(extension):
-    for exporter in DEFAULT_EXPORTERS:
-        if exporter.extension == extension:
-            return exporter
-    raise ValueError("No exporter with extension {} in DEFAULT_EXPORTERS.".format(extension))
+class TestJSONExporter(unittest.TestCase):
+    def test_dump(self):
+        test_date_1 = datetime.datetime(2020, 9, 8, 12, 11, 10)
+        test_date_2 = datetime.datetime(2015, 7, 6)
+        test_date_3 = datetime.datetime(2010, 5, 4)
+
+        unicode_with_none_data = iter([
+            [None,  test_date_1, 1.0,  "\u265d"],
+            [74321, None,        3.0,  "\u265c"],
+            [4,     test_date_2, None, "\u2704"],
+            [5,     test_date_3, 0,     None]
+        ])
+
+        table = ListTable(rows=unicode_with_none_data, columns=[
+            columns.IntColumn("a"),
+            columns.DateTimeColumn("b"),
+            columns.FloatColumn("c"),
+            columns.TextColumn("d"),
+        ])
+
+        data = json.loads(table.dumps("json").decode())
+
+        expected_data = [
+            {'d': '♝', 'b': '2020-09-08T12:11:10', 'c': 1.0, 'a': None},
+            {'d': '♜', 'b': None, 'c': 3.0, 'a': 74321},
+            {'d': '✄', 'b': '2015-07-06T00:00:00', 'c': None, 'a': 4},
+            {'d': None, 'b': '2010-05-04T00:00:00', 'c': 0, 'a': 5}
+        ]
+
+        self.assertEqual(data, expected_data)
