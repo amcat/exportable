@@ -104,11 +104,11 @@ class Table:
         column._view_index = self._columns[-1]._view_index + 1
         self._columns.append(column)
 
-    def dump(self, fo, exporter, encoding_hint=None):
-        return get_exporter(exporter).dump(self, fo, encoding_hint=encoding_hint)
+    def dump(self, fo, exporter, filename_hint=None, encoding_hint="utf-8"):
+        return get_exporter(exporter)().dump(self, fo, filename_hint=filename_hint, encoding_hint=encoding_hint)
 
-    def dumps(self, exporter, encoding_hint=None):
-        return get_exporter(exporter).dumps(self, encoding_hint=encoding_hint)
+    def dumps(self, exporter, filename_hint=None, encoding_hint="utf-8"):
+        return get_exporter(exporter)().dumps(self, filename_hint=filename_hint, encoding_hint=encoding_hint)
 
 
 class ListTable(Table):
