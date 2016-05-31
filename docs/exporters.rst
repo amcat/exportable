@@ -8,6 +8,7 @@ Exporters
 .. autoclass:: exportable.exporters.SPSSExporter
 .. autoclass:: exportable.exporters.XLSExporter
 .. autoclass:: exportable.exporters.XLSXExporter
+.. autoclass:: exportable.exporters.JSONExporter
 
 Indices and tables
 ------------------
