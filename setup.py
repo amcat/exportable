@@ -7,7 +7,7 @@ except ImportError:
 
 setup(
     name='exportable',
-    version='0.1.2',
+    version='0.1.3',
     packages=[
         'exportable',
         'exportable.exporters',
@@ -29,5 +29,12 @@ setup(
         "pyexcel-xlsx",
         "pyexcel-xls",
         "typing"
+    ],
+    classifiers=[
+        "License :: OSI Approved :: GNU Affero General Public License v3",
+        "Development Status :: 3 - Alpha",
+        "Programming Language :: Python :: 3.4",
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6"
     ]
 )
