@@ -14,7 +14,7 @@ def get_requirements():
 
 
 setup(
-    name='table',
+    name='exportable',
     version='0.1',
     packages=[
         'exportable',
