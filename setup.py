@@ -15,12 +15,15 @@ def get_requirements():
 
 setup(
     name='exportable',
-    version='0.1',
+    version='0.1.1',
     packages=[
         'exportable',
         'exportable.exporters',
         'exportable.exporters.tests'
     ],
+    package_data={
+        '': ['LICENSE.txt', 'requirements.txt'],
+    },
     url='https://github.com/amcat/exportable',
     license='AGPL',
     author='AmCAT Developers',
