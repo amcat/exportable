@@ -1,16 +1,8 @@
-import os
 
-from distutils.core import setup
-
-
-def get_requirements():
-    """Get requirements from requirements.txt. Lines starting with a # are skipped."""
-    here = os.path.dirname(__file__)
-    req = os.path.join(here, "requirements.txt")
-    for line in open(req, "r", encoding="utf-8"):
-        if line.startswith("#") or not line.strip():
-            continue
-        yield line.strip()
+try:
+    from setuptools import setup
+except ImportError:
+    from distutils.core import setup
 
 
 setup(
@@ -22,12 +14,20 @@ setup(
         'exportable.exporters.tests'
     ],
     package_data={
-        '': ['LICENSE.txt', 'requirements.txt'],
+        '*': ['LICENSE.txt', 'requirements.txt'],
     },
     url='https://github.com/amcat/exportable',
     license='AGPL',
     author='AmCAT Developers',
     author_email='',
     description='',
-    install_requires=list(get_requirements())
+    install_requires=[
+        "python-dateutil",
+        "pyexcel",
+        "pyexcel-io",
+        "pyexcel-ods3",
+        "pyexcel-xlsx",
+        "pyexcel-xls",
+        "typing"
+    ]
 )
