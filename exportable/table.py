@@ -20,9 +20,10 @@ import copy
 import datetime
 import functools
 import itertools
+from operator import itemgetter, attrgetter
 
-from typing import Iterable, Any, Sequence, Union
-from exportable.columns import Column
+from typing import Iterable, Any, Sequence, Optional
+from exportable.columns import Column, not_implemented
 
 
 def get_exporter(exporter):
@@ -42,7 +43,7 @@ class Table:
     @param size_hint: length of rows. Is used by exporters to determine progress, and some other
                       exporters to write proper binary files.
     """
-    def __init__(self, rows: Union[Iterable[Any]], columns: Sequence[Column], lazy=True, size_hint=None):
+    def __init__(self, rows: Iterable[Any], columns: Sequence[Column]=(), lazy=True, size_hint=None):
         # If no size_hint is given, try to guess the size by querying rows.
         if size_hint is None:
             try:
@@ -54,24 +55,11 @@ class Table:
 
         self.lazy = lazy
         self._rows = iter(rows) if lazy else list(rows)
-        self._columns = [copy.copy(column) for column in columns]
-
-        for i, column in enumerate(self._columns):
-            if column is not None and column.label is None:
-                error = "Each column MUST have a label upon table instantiation. {} ({}) has none."
-                raise ValueError(error.format(column, i))
-
-        # Set index on each column object. Notice that we skip None columns on purpose, but
-        # still increase the counter by one. This is useful for ListTable (and doesn't
-        # impact other implementations).
         self._column_counter = itertools.count()
-        view_index = 0
-        for column in self._columns:
-            index = next(self._column_counter)
-            if column is not None:
-                column._index = index
-                column._view_index = view_index
-                view_index += 1
+        self._columns = []
+
+        for column in columns:
+            self.add_column(column)
 
     def __len__(self):
         if self.size_hint is None:
@@ -93,16 +81,16 @@ class Table:
         return ([self.get_value(row, column) for column in self.columns] for row in self._rows)
 
     def get_value(self, row, column: Column):
-        raise NotImplementedError("get_value() should be implemented by subclasses")
-
-    def get_column(self, column: Column):
-        return (row[column._view_index] for row in self.rows)
+        func = column.cellfunc
+        value = column.rowfunc(row)
+        return func(value) if func else value
 
     def add_column(self, column: Column):
         column = copy.copy(column)
         column._index = next(self._column_counter)
-        column._view_index = self._columns[-1]._view_index + 1
+        column._view_index = self._columns[-1]._view_index + 1 if self._columns else 0
         self._columns.append(column)
+        return column
 
     def dump(self, fo, exporter, filename_hint=None, encoding_hint="utf-8"):
         return get_exporter(exporter)().dump(self, fo, filename_hint=filename_hint, encoding_hint=encoding_hint)
@@ -133,13 +121,13 @@ class ListTable(Table):
     @param rows: list of lists
     @param columns: if a column is None, skip a field in each row
     """
-    def __init__(self, rows: Iterable[Sequence[Any]], columns, lazy=True, size_hint=None):
-        super().__init__(rows, columns, lazy=lazy, size_hint=size_hint)
-
-    def get_value(self, row, column: Column):
-        value = row[column._index]
-        func = column.cellfunc
-        return func(value) if func else value
+    def add_column(self, column: Optional[Column]):
+        if column is not None:
+            column = super().add_column(column)
+            if column.rowfunc is not_implemented:
+                column.rowfunc = itemgetter(column._index)
+        else:
+            next(self._column_counter)
 
 
 class DictTable(Table):
@@ -149,13 +137,10 @@ class DictTable(Table):
     @param rows: list of dicts
     @param columns: list of columns. The label of a column is used to access dictionary.
     """
-    def __init__(self, rows: Iterable[dict], columns, lazy=True, size_hint=None):
-        super().__init__(rows, columns, lazy=lazy, size_hint=size_hint)
-
-    def get_value(self, row, column: Column):
-        value = row[column.label]
-        func = column.cellfunc
-        return func(value) if func else value
+    def add_column(self, column: Column):
+        column = super().add_column(column)
+        if column.rowfunc is not_implemented:
+            column.rowfunc = itemgetter(column.label)
 
 
 class AttributeTable(Table):
@@ -165,13 +150,10 @@ class AttributeTable(Table):
     @param rows: list of rows
     @param columns: list of columns. The label of a column is used to access attributes.
     """
-    def __init__(self, rows: Iterable[dict], columns, lazy=True, size_hint=None):
-        super().__init__(rows, columns, lazy=lazy, size_hint=size_hint)
-
-    def get_value(self, row, column: Column):
-        value = getattr(row, column.label)
-        func = column.cellfunc
-        return func(value) if func else value
+    def add_column(self, column: Column):
+        column = super().add_column(column)
+        if column.rowfunc is not_implemented:
+            column.rowfunc = attrgetter(column.label)
 
 
 class WrappedTable:
