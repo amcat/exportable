@@ -7,7 +7,7 @@ except ImportError:
 
 setup(
     name='exportable',
-    version='0.1.3',
+    version='0.1.4',
     packages=[
         'exportable',
         'exportable.exporters',
