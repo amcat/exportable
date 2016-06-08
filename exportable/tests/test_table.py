@@ -113,3 +113,19 @@ class TestDeclaredTable(unittest.TestCase):
 
         table = SumDT(ListTable, rows=[[1, 2], [3, 4]])
         self.assertEqual(list(table.rows), [[1, 2, 3], [3, 4, 7]])
+
+    def test_filter_columns(self):
+        class SumDT(DeclaredTable):
+            a1 = IntColumn()
+            a2 = IntColumn()
+            sum = IntColumn(rowfunc=sum)
+
+        table = SumDT(ListTable, include=["a1"], rows=[[1, 2], [3, 4]])
+        self.assertEqual(list(table.rows), [[1], [3]])
+
+        table = SumDT(ListTable, exclude=["sum"], rows=[[1, 2], [3, 4]])
+        self.assertEqual(list(table.rows), [[1, 2], [3, 4]])
+
+        self.assertRaises(ValueError, SumDT, ListTable, exclude=[], include=[], rows=[])
+        self.assertRaises(ValueError, SumDT, ListTable, exclude=["a1"], include=["a2"], rows=[])
+

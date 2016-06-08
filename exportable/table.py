@@ -22,7 +22,7 @@ import functools
 import itertools
 from operator import itemgetter, attrgetter
 
-from typing import Iterable, Any, Sequence, Optional
+from typing import Iterable, Any, Sequence, Optional, Container
 from exportable.columns import Column
 
 
@@ -202,6 +202,26 @@ def get_declared_columns(cls):
                 yield column
 
 
+def filter_columns(columns: Iterable[Column],
+                   include: Optional[Container[str]]=None,
+                   exclude: Optional[Container[str]]=None):
+    """
+    Include or exclude columns based on their labels.
+    """
+    if include and exclude:
+        raise ValueError("Pass either include or exclude, not both.")
+    elif include is None and exclude is None:
+        return columns
+    elif not include and not exclude:
+        raise ValueError("Pass either include or exclude, not neither.")
+    elif include:
+        return (c for c in columns if c.label in include)
+    elif exclude:
+        return (c for c in columns if c.label not in exclude)
+    else:
+        raise RuntimeError("Not reachable?")
+
+
 class DeclaredTable(WrappedTable):
     """A declared table defines columns on declaration time. For example:
 
@@ -218,8 +238,14 @@ class DeclaredTable(WrappedTable):
 
     Declared tables are not dependent on one specific data structure, as it is a WrappedTable.
     """
-    def __init__(self, table_cls, rows, lazy=True, size_hint=None):
-        columns = self.__class__._get_columns()
+    def __init__(self, table_cls, rows, include=None, exclude=None, lazy=True, size_hint=None):
+        """
+
+        @param table_cls: class to use to get data from rows (ex: ListTable, DictTable, etc)
+        @param include: column labels to include
+        @param exclude: column labels to exclude
+        """
+        columns = filter_columns(self._get_columns(), include=include, exclude=exclude)
         super().__init__(table_cls(rows, columns, lazy=lazy, size_hint=size_hint))
 
     @classmethod
