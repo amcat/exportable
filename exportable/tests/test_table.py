@@ -16,10 +16,11 @@
 # You should have received a copy of the GNU Affero General Public        #
 # License along with AmCAT.  If not, see <http://www.gnu.org/licenses/>.  #
 ###########################################################################
+import datetime
 import unittest
 
-from exportable.columns import IntColumn
-from exportable.table import ListTable
+from exportable.columns import IntColumn, TextColumn, DateTimeColumn, FloatColumn
+from exportable.table import ListTable, DeclaredTable
 
 
 class TestListTable(unittest.TestCase):
@@ -76,3 +77,39 @@ class TestDictTable(unittest.TestCase):
 
 class TestAttributeTable(unittest.TestCase):
     pass
+
+
+class TestDeclaredTable(unittest.TestCase):
+    def test_single_dt(self):
+        """Test a single table declaration for field existance and order."""
+        class FooDT(DeclaredTable):
+            icolumn = IntColumn()
+            tcolumn = TextColumn()
+            dcolumn = DateTimeColumn()
+
+        table = FooDT(ListTable, rows=[])
+        self.assertEqual([c.label for c in table.columns], ["icolumn", "tcolumn", "dcolumn"])
+        self.assertEqual([c.type for c in table.columns], [int, str, datetime.datetime])
+
+    def test_inheritance(self):
+        class FooDT(DeclaredTable):
+            icolumn = IntColumn()
+            tcolumn = TextColumn()
+            dcolumn = DateTimeColumn()
+
+        class BarDT(FooDT):
+            fcolumn = FloatColumn()
+
+
+        table = BarDT(ListTable, rows=[])
+        self.assertEqual([c.label for c in table.columns], ["icolumn", "tcolumn", "dcolumn", "fcolumn"])
+        self.assertEqual([c.type for c in table.columns], [int, str, datetime.datetime, float])
+
+    def test_calculated_column(self):
+        class SumDT(DeclaredTable):
+            a1 = IntColumn()
+            a2 = IntColumn()
+            sum = IntColumn(rowfunc=sum)
+
+        table = SumDT(ListTable, rows=[[1, 2], [3, 4]])
+        self.assertEqual(list(table.rows), [[1, 2, 3], [3, 4, 7]])
