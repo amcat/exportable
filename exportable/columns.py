@@ -24,7 +24,7 @@ CREATION_COUNTER = itertools.count()
 
 
 class Column(object):
-    def __init__(self, ctype, label=None, cellfunc=None, rowfunc=None, verbose_name=None, _creation_counter=None):
+    def __init__(self, ctype, label=None, cellfunc=None, rowfunc=None, verbose_name=None, _table=None, _creation_counter=None):
         """
         @param ctype: type yielded by rowfunc/cellfunc.
         @param label: alphanumeric label for column (often used to access datastructures)
@@ -47,6 +47,9 @@ class Column(object):
         # Creation counter is kept to determine the order in declared tables
         self._creation_counter = next(CREATION_COUNTER) if _creation_counter is None else _creation_counter
 
+        # Create a backref to the table instance we're bound to
+        self._table = _table
+
     def from_str(self, s):
         """Convert value from str. Might be used by importers which support all formats."""
         return self.type(s) if s else None
@@ -61,7 +64,7 @@ class Column(object):
         copied = self.__class__(
             label=self.label, cellfunc=self.cellfunc,
             rowfunc=self.rowfunc, verbose_name=self.verbose_name,
-            _creation_counter=self._creation_counter
+            _creation_counter=self._creation_counter, _table=self._table
         )
 
         # Copy all remaining attributes as well

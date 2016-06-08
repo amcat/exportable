@@ -87,6 +87,7 @@ class Table:
 
     def add_column(self, column: Column):
         column = copy.copy(column)
+        column._table = self
         column._index = next(self._column_counter)
         column._view_index = self._columns[-1]._view_index + 1 if self._columns else 0
         self._columns.append(column)
