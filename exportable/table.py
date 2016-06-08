@@ -23,7 +23,7 @@ import itertools
 from operator import itemgetter, attrgetter
 
 from typing import Iterable, Any, Sequence, Optional
-from exportable.columns import Column, not_implemented
+from exportable.columns import Column
 
 
 def get_exporter(exporter):
@@ -81,9 +81,9 @@ class Table:
         return ([self.get_value(row, column) for column in self.columns] for row in self._rows)
 
     def get_value(self, row, column: Column):
-        func = column.cellfunc
+        cfunc = column.cellfunc
         value = column.rowfunc(row)
-        return func(value) if func else value
+        return cfunc(value) if cfunc else value
 
     def add_column(self, column: Column):
         column = copy.copy(column)
@@ -124,7 +124,7 @@ class ListTable(Table):
     def add_column(self, column: Optional[Column]):
         if column is not None:
             column = super().add_column(column)
-            if column.rowfunc is not_implemented:
+            if column.rowfunc is None:
                 column.rowfunc = itemgetter(column._index)
         else:
             next(self._column_counter)
@@ -139,7 +139,7 @@ class DictTable(Table):
     """
     def add_column(self, column: Column):
         column = super().add_column(column)
-        if column.rowfunc is not_implemented:
+        if column.rowfunc is None:
             column.rowfunc = itemgetter(column.label)
 
 
@@ -152,7 +152,7 @@ class AttributeTable(Table):
     """
     def add_column(self, column: Column):
         column = super().add_column(column)
-        if column.rowfunc is not_implemented:
+        if column.rowfunc is None:
             column.rowfunc = attrgetter(column.label)
 
 

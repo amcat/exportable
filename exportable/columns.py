@@ -23,12 +23,8 @@ import dateutil.parser
 CREATION_COUNTER = itertools.count()
 
 
-def not_implemented(*args, **kwargs):
-    raise NotImplementedError("Tables should either override rowfuncs of their columns OR force their users to do so.")
-
-
 class Column(object):
-    def __init__(self, ctype, label=None, cellfunc=None, rowfunc=not_implemented, verbose_name=None, _creation_counter=None):
+    def __init__(self, ctype, label=None, cellfunc=None, rowfunc=None, verbose_name=None, _creation_counter=None):
         """
         @param ctype: type yielded by rowfunc/cellfunc.
         @param label: alphanumeric label for column (often used to access datastructures)
