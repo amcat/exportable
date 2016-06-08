@@ -192,7 +192,7 @@ class SortedTable(WrappedTable):
         return sorted(self.table.rows, key=self.key, reverse=self.reverse)
 
 
-def get_declared_columns(cls):
+def _get_declared_columns(cls):
     for attr_name in dir(cls):
         if not attr_name.startswith("_"):
             column = getattr(cls, attr_name)
@@ -200,6 +200,11 @@ def get_declared_columns(cls):
                 if column.label is None:
                     column.label = attr_name
                 yield column
+
+
+@functools.lru_cache()
+def get_declared_columns(cls):
+    return tuple(sorted(_get_declared_columns(cls), key=lambda c: c._creation_counter))
 
 
 def filter_columns(columns: Iterable[Column],
@@ -249,6 +254,5 @@ class DeclaredTable(WrappedTable):
         super().__init__(table_cls(rows, columns, lazy=lazy, size_hint=size_hint))
 
     @classmethod
-    @functools.lru_cache()
     def _get_columns(cls):
-        return tuple(sorted(get_declared_columns(cls), key=lambda c: c._creation_counter))
+        return get_declared_columns(cls)
