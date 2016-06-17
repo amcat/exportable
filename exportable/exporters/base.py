@@ -100,7 +100,7 @@ class Exporter(object):
             # If any exceptions occurred while running _dump_iter, the exception will be thrown
             future.result()
 
-    def dump_http_reponse(self, table, filename=None, compress=True, compress_level=3, encoding_hint="utf-8"):
+    def dump_http_response(self, table, filename=None, compress=True, compress_level=3, encoding_hint="utf-8"):
         """Render exportable as a Django response.
 
         @param filename: filename to suggest to browser
