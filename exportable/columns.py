@@ -87,6 +87,17 @@ class TextColumn(Column):
         return value
 
 
+class UUIDColumn(Column):
+    def __init__(self, label=None, **kwargs):
+        super().__init__(uuid.UUID, label, **kwargs)
+
+    def to_str(self, value):
+        return str(value)
+
+    def from_str(self, s):
+        return uuid.UUID(s)
+
+
 class IntColumn(Column):
     def __init__(self, label=None, **kwargs):
         super().__init__(int, label, **kwargs)
