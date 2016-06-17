@@ -213,15 +213,13 @@ def filter_columns(columns: Iterable[Column],
     """
     Include or exclude columns based on their labels.
     """
-    if include and exclude:
+    if include is not None and exclude is not None:
         raise ValueError("Pass either include or exclude, not both.")
     elif include is None and exclude is None:
         return columns
-    elif not include and not exclude:
-        raise ValueError("Pass either include or exclude, not neither.")
-    elif include:
+    elif exclude is None:
         return [c for c in columns if c.label in include]
-    elif exclude:
+    elif include is None:
         return [c for c in columns if c.label not in exclude]
     else:
         raise RuntimeError("Not reachable?")
