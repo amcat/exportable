@@ -127,3 +127,34 @@ class DateTimeColumn(Column):
 
     def to_str(self, time: datetime.datetime):
         return time.isoformat()
+
+
+class BooleanField(Column):
+    def __init__(self, label=None, **kwargs):
+        super().__init__(bool, label, **kwargs)
+
+    def from_str(self, s):
+        if s.lower() in ("yes", "true", "1"):
+            return True
+        elif s.lower() in ("no", "false", "0"):
+            return False
+        else:
+            raise ValueError("No boolean recognized: {}".format(s))
+
+    def to_str(self, value):
+        return str(value)
+
+
+class NullBooleanField(Column):
+    def __init__(self, label=None, **kwargs):
+        super().__init__(bool, label, **kwargs)
+
+    def from_str(self, s):
+        if not s:
+            return None
+        elif s.lower() in ("yes", "true", "1"):
+            return True
+        elif s.lower() in ("no", "false", "0"):
+            return False
+        else:
+            raise ValueError("No boolean recognized: {}".format(s))
