@@ -87,7 +87,6 @@ class Table:
 
     def add_column(self, column: Column):
         column = copy.copy(column)
-        column._table = self
         column._index = next(self._column_counter)
         column._view_index = self._columns[-1]._view_index + 1 if self._columns else 0
         self._columns.append(column)
@@ -221,9 +220,9 @@ def filter_columns(columns: Iterable[Column],
     elif not include and not exclude:
         raise ValueError("Pass either include or exclude, not neither.")
     elif include:
-        return (c for c in columns if c.label in include)
+        return [c for c in columns if c.label in include]
     elif exclude:
-        return (c for c in columns if c.label not in exclude)
+        return [c for c in columns if c.label not in exclude]
     else:
         raise RuntimeError("Not reachable?")
 
@@ -244,7 +243,7 @@ class DeclaredTable(WrappedTable):
 
     Declared tables are not dependent on one specific data structure, as it is a WrappedTable.
     """
-    def __init__(self, table_cls, rows, include=None, exclude=None, lazy=True, size_hint=None):
+    def __init__(self, table_cls, rows, include: Optional[Sequence[str]]=None, exclude: Optional[Sequence[str]]=None, lazy=True, size_hint=None):
         """
 
         @param table_cls: class to use to get data from rows (ex: ListTable, DictTable, etc)
